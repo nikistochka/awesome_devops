@@ -1,0 +1,7 @@
+---
+- name: Install and deploy nginx
+  hosts: test_hosts
+  become: yes
+
+  roles:
+    - { role: nginx_deploy, when: ansible_system == 'Linux' }

@@ -1,0 +1,72 @@
+# Run this playbook with gce.py script or even folder:
+# ansible-playbook -i inventory playbook_name.yml
+#
+# And don't forget to open 'admin_https_port' in gcloud Firewall
+---
+- name: Deploy Jenkins with https self signed certificate
+  hosts: my-test-project-jenkins-1
+  become: yes
+
+  vars:
+    admin_https_port: 8443
+    cert_password: mysecretpassword123
+
+  tasks:
+    - name: Install Java 8
+      apt:
+        force_apt_get: yes
+        update_cache: yes
+        name: openjdk-8-jre
+
+    - name: Add Jenkins key
+      apt_key:
+        url: https://pkg.jenkins.io/debian/jenkins.io.key
+        state: present
+
+    - name: Add nginx apt repository
+      apt_repository:
+        repo: 'deb https://pkg.jenkins.io/debian-stable binary/'
+        state: present
+        filename: jenkins
+        update_cache: yes
+
+    - name: Install Jenkins
+      apt:
+        force_apt_get: yes
+        update_cache: yes
+        name: jenkins
+
+    - name: Create directory for cert /var/lib/jenkins/cert
+      file:
+        path: /var/lib/jenkins/cert
+        state: directory
+
+    - name: Create crt and key file
+      shell: openssl req -newkey rsa:2048 -nodes -subj "/C=RU/ST=Moscow/L=Moscow/O=MyJenkins/CN={{ ansible_host }}" \
+             -keyout /var/lib/jenkins/cert/jenkins.key -x509 -days 365 -out /var/lib/jenkins/cert/jenkins.crt
+
+    - name: Create keys.pkcs12
+      shell: openssl pkcs12 -inkey /var/lib/jenkins/cert/jenkins.key -in /var/lib/jenkins/cert/jenkins.crt -export \
+             -out /var/lib/jenkins/cert/keys.pkcs12 -passout pass:{{ cert_password }}
+
+    - name: Create .jks file
+      shell: keytool -importkeystore -srckeystore /var/lib/jenkins/cert/keys.pkcs12 -srcstoretype pkcs12 -destkeystore /var/lib/jenkins/cert/jenkins.jks \
+             -srcstorepass {{ cert_password }} -deststorepass {{ cert_password }}
+
+    - name:
+      shell: sed -i 's%^JENKINS_ARGS=.*$%JENKINS_ARGS="--httpPort=-1 --httpsPort={{ admin_https_port }} --httpsKeyStore=/var/lib/jenkins/cert/jenkins.jks \
+             --httpsKeyStorePassword={{ cert_password }}"%' /etc/default/jenkins
+
+    - name: Start jenkins service
+      service:
+        name: jenkins
+        state: restarted
+
+    - name: Get admin password
+      command: cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: cat
+
+    - name: Show admin password
+      debug:
+        msg:
+        - "Jenkins web admin password for first login: '{{ cat.stdout }}'"

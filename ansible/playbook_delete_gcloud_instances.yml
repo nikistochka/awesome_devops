@@ -1,0 +1,22 @@
+---
+- name: Delete VM instance(s) in gcloud
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    service_account_email:  ansible-account@my-test-project-246911.iam.gserviceaccount.com
+    credentials_file: ./my_test_project.json
+    project_id: my-test-project-246911
+    zone: europe-west4-a
+    instances: my-test-project-vm-1,my-test-project-vm-2
+
+  tasks:
+    - name: Delete VM instance(s) in gcloud
+      gce:
+        service_account_email: "{{ service_account_email }}"
+        credentials_file: "{{ credentials_file }}"
+        project_id: "{{ project_id }}"
+        instance_names: "{{ instances }}"
+        zone: "{{ zone }}"
+        state: absent

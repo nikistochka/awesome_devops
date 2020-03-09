@@ -1,0 +1,13 @@
+---
+# tasks file for nginx_deploy
+
+- name: Install nginx                                                    
+  apt: update_cache=yes name=nginx state=latest
+
+- name: Copy Index.html to nginx                                                
+  template: src=index.j2 dest={{ destination_index_folder }}/index.html
+  notify: 
+    - Restart nginx
+
+- name: Enable and start service nginx
+  service: name=nginx state=started enabled=yes

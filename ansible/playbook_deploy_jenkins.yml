@@ -1,0 +1,44 @@
+---
+- name: Deploy Jenkins
+  hosts: my-test-project-jenkins-1
+  become: yes
+ 
+  tasks:
+    - name: Install Java 8
+      apt:
+        force_apt_get: yes
+        update_cache: yes
+        name: openjdk-8-jre
+    
+    - name: Add Jenkins key
+      apt_key:
+        url: https://pkg.jenkins.io/debian/jenkins.io.key
+        state: present
+
+    - name: Add nginx apt repository
+      apt_repository: 
+        repo: 'deb https://pkg.jenkins.io/debian-stable binary/'
+        state: present 
+        filename: jenkins
+        update_cache: yes
+
+    - name: Install Jenkins
+      apt:
+        force_apt_get: yes
+        update_cache: yes
+        name: jenkins
+
+    - name: Start jenkins service
+      service:
+        name: jenkins
+        state: started
+
+    - name: Get admin password
+      command: cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: cat
+    
+    - name: Show admin password
+      debug:
+        msg: 
+        - "Admin password for first login: '{{ cat.stdout }}'"
+

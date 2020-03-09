@@ -1,0 +1,112 @@
+---
+- name: Deploy docker and docker-compose on Ubuntu and CentOS
+  hosts: host3,host4
+  become: yes
+
+
+  tasks:
+    - name: Install Docker on Ubuntu
+      block:
+      - name: Install dependencies
+        apt:
+          force_apt_get: yes
+          update_cache: yes
+          name:
+          - apt-transport-https
+          - ca-certificates
+          - gnupg-agent
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+
+      - name: Add keys
+        apt_key:
+          url: https://download.docker.com/linux/ubuntu/gpg
+          state: present
+
+      - name: Add repo
+        apt_repository:
+          repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+          state: present
+          filename: docker
+          update_cache: yes
+
+      - name: Install docker
+        apt:
+          force_apt_get: yes
+          update_cache: yes
+          name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+
+      when: ansible_distribution == 'Ubuntu'
+
+
+    - name: Install Docker on CentOS
+      block:
+      - name: Install dependencies
+        yum:
+          update_cache: yes
+          state: present
+          name:
+            - yum-utils
+            - device-mapper-persistent-data
+            - lvm2
+            - python-pip
+
+      - name: Add Docker GPG key
+        rpm_key:
+          key: https://download.docker.com/linux/centos/gpg
+          state: present
+
+      - name: Add repository
+        yum_repository:
+          file: docker-ce
+          name: docker-ce-stable
+          description: Docker CE Stable - $basearch
+          enabled: yes
+          gpgcheck: yes
+          gpgcakey: https://download.docker.com/linux/centos/gpg
+          baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
+
+      - name: Install Docker
+        yum:
+          update_cache: yes
+          state: present
+          name:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io
+
+      when: ansible_distribution == 'CentOS'
+
+
+
+    - name: Add user to group Docker
+      user:
+        name: ggroin
+        groups: docker
+        append: yes
+
+    - name: Check if Docker service is started and enabled
+      service:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    - name: Install docker-compose
+      uri:
+        url: https://github.com/docker/compose/releases/download/1.24.1/docker-compose-{{ ansible_system }}-{{ ansible_userspace_architecture }}
+        creates: /usr/local/bin/docker-compose
+        dest: /usr/local/bin/docker-compose
+
+    - name: Make docker-compose executable (chmod +x docker-compose)
+      file:
+        path: /usr/local/bin/docker-compose
+        mode: +x

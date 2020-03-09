@@ -1,0 +1,34 @@
+# You need to download .json credential file:
+# https://support.google.com/cloud/answer/6158849?hl=en&ref_topic=6262490#serviceaccounts
+# And grant service account permission to the 'Compute Admin' and 'Service Account User' roles
+---
+- name: Create VM instance(s) in gcloud for Jenkins
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    service_account_email: ansible-account@my-test-project-246911.iam.gserviceaccount.com
+    credentials_file: ./my_test_project.json
+    project_id: my-test-project-246911
+    machine_type: n1-standard-1
+    image: ubuntu-1804
+    zone: europe-west4-a
+    instances: my-test-project-jenkins-1
+
+  tasks:
+    - name: Create VM instance(s) in gcloud
+      gce:
+        service_account_email: "{{ service_account_email }}"
+        credentials_file: "{{ credentials_file }}"
+        project_id: "{{ project_id }}"
+        machine_type: "{{ machine_type }}"
+        image: "{{ image }}"
+        zone: "{{ zone }}"
+        instance_names: "{{ instances }}"
+        disk_auto_delete: yes
+      register: gce
+
+    - name: Print server public IP address
+      debug:
+        msg: "Server public IP address is {{ gce.instance_data[0].public_ip }}"
