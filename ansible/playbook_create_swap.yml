@@ -1,15 +1,15 @@
 # ansible-galaxy install geerlingguy.swap
 ---
-    - hosts: all
-      become: true
-      vars:
-        swap_file_path: /swapfile
-        # Swapfile size in GB:
-        swap_file_size_gb: '10'
-        # Default swap_file_create_command is:
-        # "dd if=/dev/zero of={{ swap_file_path }} bs=1M count={{ swap_file_size_mb }}"
-        swap_file_create_command: "fallocate -l {{ swap_file_size_gb }}G {{ swap_file_path }}"
-        swap_file_state: present
-        
-      roles:
-        - role: geerlingguy.swap
+- hosts: all
+  become: true
+  vars:
+    swap_file_path: /swapfile
+    # Swapfile size in GB:
+    swap_file_size_gb: '10'
+    # Default swap_file_create_command is:
+    # "dd if=/dev/zero of={{ swap_file_path }} bs=1M count={{ swap_file_size_mb }}"
+    swap_file_create_command: "fallocate -l {{ swap_file_size_gb }}G {{ swap_file_path }}"
+    swap_file_state: present
+    
+  roles:
+    - role: geerlingguy.swap
