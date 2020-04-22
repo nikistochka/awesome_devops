@@ -1,0 +1,43 @@
+version: '3.7'
+services:
+  service_1:
+    build:
+      context: ./dir
+      dockerfile: Multistage.Dockerfile
+    image: :latest
+    restart: always
+    hostname: ".local"
+    container_name: ".local"
+    environment:
+      - RACK_ENV=development
+    ports:
+      - "443:443"
+    volumes:
+      - type: bind
+        source: ./file
+        target: /etc/file
+      - type: volume
+        source: _volume
+        target: /var/log/
+    # adding hosts to /etc/hosts:
+    extra_hosts:
+      - "somehost:8.8.8.8"
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "tcp://10.0.0.10:123"
+    entrypoint: ["entrypoint.sh", "par_1"]
+    cmd: ["par_2"]
+
+  service_2:
+    image: :latest
+    restart: always
+    depends_on:
+      - service_1
+    hostname: ".local"
+    container_name: ".local"
+    expose:
+      - "8080"
+
+volumes: 
+  _volume:
