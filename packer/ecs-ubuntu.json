@@ -1,0 +1,41 @@
+{
+    "variables": {
+      "region": "us-east-1",
+      "default_username": "ubuntu",
+      "ECS_CLUSTER": "",
+      "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+      "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}"
+    },
+    "builders": [
+      {
+        "region": "{{user `region`}}",
+        "access_key": "{{user `aws_access_key`}}",
+        "secret_key": "{{user `aws_secret_key`}}",
+        "ami_name": "ubuntu-20.04-in-ECS-cluster-{{user `ECS_CLUSTER`}}-{{timestamp}}",
+        "source_ami": "ami-0dba2cb6798deb6d8",
+        "instance_type": "t2.micro",
+        "ssh_username": "{{user `default_username`}}",
+        "type": "amazon-ebs"
+      }
+    ],
+    "provisioners": [
+      {
+        "type": "shell",
+        "inline": [
+            "sleep 30",
+            "sudo apt-get update",
+            "curl -fsSL https://get.docker.com -o get-docker.sh",
+            "sudo sh get-docker.sh",
+            "sudo usermod -aG docker {{user `default_username`}}"
+          ]
+      },
+      {
+        "type": "shell",
+        "environment_vars": ["ECS_CLUSTER={{user `ECS_CLUSTER`}}"],
+        "execute_command": "{{ .Vars }} sudo -E -S sh '{{ .Path }}'",
+        "scripts": [
+            "{{template_dir}}/ecs-config.sh"
+        ]
+      }
+    ]
+  }
