@@ -5,6 +5,9 @@
 * Roles
 * Inventory script for GCE
 
+### ./nginx
+* nginx configs
+
 ### ./project-templates:
 * Multistage.Dockerfile template
 * docker-compose.yml template
